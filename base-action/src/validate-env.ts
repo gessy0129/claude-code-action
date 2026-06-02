@@ -1,11 +1,13 @@
 /**
  * Validates the environment variables required for running Claude Code
- * based on the selected provider (Anthropic API, AWS Bedrock, Google Vertex AI, or Microsoft Foundry)
+ * based on the selected provider (Anthropic API, AWS Bedrock, Google Vertex AI,
+ * Microsoft Foundry, or Claude Platform on AWS)
  */
 export function validateEnvironmentVariables() {
   const useBedrock = process.env.CLAUDE_CODE_USE_BEDROCK === "1";
   const useVertex = process.env.CLAUDE_CODE_USE_VERTEX === "1";
   const useFoundry = process.env.CLAUDE_CODE_USE_FOUNDRY === "1";
+  const useAwsPlatform = process.env.CLAUDE_CODE_USE_ANTHROPIC_AWS === "1";
   const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
   const claudeCodeOAuthToken = process.env.CLAUDE_CODE_OAUTH_TOKEN;
   const federationRuleId = process.env.ANTHROPIC_FEDERATION_RULE_ID;
@@ -20,14 +22,19 @@ export function validateEnvironmentVariables() {
   const errors: string[] = [];
 
   // Check for mutual exclusivity between providers
-  const activeProviders = [useBedrock, useVertex, useFoundry].filter(Boolean);
+  const activeProviders = [
+    useBedrock,
+    useVertex,
+    useFoundry,
+    useAwsPlatform,
+  ].filter(Boolean);
   if (activeProviders.length > 1) {
     errors.push(
-      "Cannot use multiple providers simultaneously. Please set only one of: CLAUDE_CODE_USE_BEDROCK, CLAUDE_CODE_USE_VERTEX, or CLAUDE_CODE_USE_FOUNDRY.",
+      "Cannot use multiple providers simultaneously. Please set only one of: CLAUDE_CODE_USE_BEDROCK, CLAUDE_CODE_USE_VERTEX, CLAUDE_CODE_USE_FOUNDRY, or CLAUDE_CODE_USE_ANTHROPIC_AWS.",
     );
   }
 
-  if (!useBedrock && !useVertex && !useFoundry) {
+  if (!useBedrock && !useVertex && !useFoundry && !useAwsPlatform) {
     if (!anthropicApiKey && !claudeCodeOAuthToken && !hasWorkloadIdentity) {
       if (hasPartialWorkloadIdentity) {
         errors.push(
@@ -78,6 +85,40 @@ export function validateEnvironmentVariables() {
     if (!foundryResource && !foundryBaseUrl) {
       errors.push(
         "Either ANTHROPIC_FOUNDRY_RESOURCE or ANTHROPIC_FOUNDRY_BASE_URL is required when using Microsoft Foundry.",
+      );
+    }
+  } else if (useAwsPlatform) {
+    const workspaceId = process.env.ANTHROPIC_AWS_WORKSPACE_ID;
+    const awsRegion = process.env.AWS_REGION;
+    const baseUrl = process.env.ANTHROPIC_AWS_BASE_URL;
+    const apiKey = process.env.ANTHROPIC_AWS_API_KEY;
+    const awsAccessKeyId = process.env.AWS_ACCESS_KEY_ID;
+    const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+    const skipAuth = process.env.CLAUDE_CODE_SKIP_ANTHROPIC_AWS_AUTH === "1";
+
+    // The workspace ID is always required; it is sent as the anthropic-workspace-id header
+    if (!workspaceId) {
+      errors.push(
+        "ANTHROPIC_AWS_WORKSPACE_ID is required when using Claude Platform on AWS.",
+      );
+    }
+
+    // AWS_REGION is needed to compute the base URL (https://aws-external-anthropic.{region}.api.aws)
+    // unless an explicit base URL override is provided
+    if (!awsRegion && !baseUrl) {
+      errors.push(
+        "AWS_REGION is required when using Claude Platform on AWS (used to compute the base URL, unless ANTHROPIC_AWS_BASE_URL is set).",
+      );
+    }
+
+    // Auth is either an API key (x-api-key) or SigV4 from AWS credentials, unless a gateway signs requests
+    const hasApiKey = Boolean(apiKey);
+    const hasAccessKeyCredentials = Boolean(
+      awsAccessKeyId && awsSecretAccessKey,
+    );
+    if (!skipAuth && !hasApiKey && !hasAccessKeyCredentials) {
+      errors.push(
+        "Either ANTHROPIC_AWS_API_KEY or both AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are required when using Claude Platform on AWS. Set CLAUDE_CODE_SKIP_ANTHROPIC_AWS_AUTH=1 if a gateway signs requests on your behalf.",
       );
     }
   }

@@ -421,5 +421,36 @@ describe("parseSdkOptions", () => {
         process.env = originalEnv;
       }
     });
+
+    test("should drop an empty ANTHROPIC_AWS_API_KEY so SigV4 is used for Claude Platform on AWS", () => {
+      const originalEnv = { ...process.env };
+      process.env.ANTHROPIC_AWS_API_KEY = "";
+
+      try {
+        const result = parseSdkOptions({});
+
+        expect(result.sdkOptions.env?.ANTHROPIC_AWS_API_KEY).toBeUndefined();
+        expect("ANTHROPIC_AWS_API_KEY" in (result.sdkOptions.env ?? {})).toBe(
+          false,
+        );
+      } finally {
+        process.env = originalEnv;
+      }
+    });
+
+    test("should preserve a non-empty ANTHROPIC_AWS_API_KEY", () => {
+      const originalEnv = { ...process.env };
+      process.env.ANTHROPIC_AWS_API_KEY = "sk-ant-test";
+
+      try {
+        const result = parseSdkOptions({});
+
+        expect(result.sdkOptions.env?.ANTHROPIC_AWS_API_KEY).toBe(
+          "sk-ant-test",
+        );
+      } finally {
+        process.env = originalEnv;
+      }
+    });
   });
 });

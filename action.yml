@@ -100,6 +100,10 @@ inputs:
     description: "Use Microsoft Foundry with OIDC authentication instead of direct Anthropic API"
     required: false
     default: "false"
+  use_aws_platform:
+    description: "Use Claude Platform on AWS (Anthropic-operated API with AWS authentication) instead of direct Anthropic API"
+    required: false
+    default: "false"
 
   claude_args:
     description: "Additional arguments to pass directly to Claude CLI"
@@ -319,6 +323,7 @@ runs:
         CLAUDE_CODE_USE_BEDROCK: ${{ inputs.use_bedrock == 'true' && '1' || '' }}
         CLAUDE_CODE_USE_VERTEX: ${{ inputs.use_vertex == 'true' && '1' || '' }}
         CLAUDE_CODE_USE_FOUNDRY: ${{ inputs.use_foundry == 'true' && '1' || '' }}
+        CLAUDE_CODE_USE_ANTHROPIC_AWS: ${{ inputs.use_aws_platform == 'true' && '1' || '' }}
 
         # AWS configuration
         AWS_REGION: ${{ env.AWS_REGION }}
@@ -342,6 +347,13 @@ runs:
         # Microsoft Foundry configuration
         ANTHROPIC_FOUNDRY_RESOURCE: ${{ env.ANTHROPIC_FOUNDRY_RESOURCE }}
         ANTHROPIC_FOUNDRY_BASE_URL: ${{ env.ANTHROPIC_FOUNDRY_BASE_URL }}
+
+        # Claude Platform on AWS configuration
+        ANTHROPIC_AWS_WORKSPACE_ID: ${{ env.ANTHROPIC_AWS_WORKSPACE_ID }}
+        ANTHROPIC_AWS_BASE_URL: ${{ env.ANTHROPIC_AWS_BASE_URL || (env.AWS_REGION && format('https://aws-external-anthropic.{0}.api.aws', env.AWS_REGION)) }}
+        ANTHROPIC_AWS_API_KEY: ${{ env.ANTHROPIC_AWS_API_KEY }}
+        CLAUDE_CODE_SKIP_ANTHROPIC_AWS_AUTH: ${{ env.CLAUDE_CODE_SKIP_ANTHROPIC_AWS_AUTH }}
+
         ANTHROPIC_DEFAULT_SONNET_MODEL: ${{ env.ANTHROPIC_DEFAULT_SONNET_MODEL }}
         ANTHROPIC_DEFAULT_HAIKU_MODEL: ${{ env.ANTHROPIC_DEFAULT_HAIKU_MODEL }}
         ANTHROPIC_DEFAULT_OPUS_MODEL: ${{ env.ANTHROPIC_DEFAULT_OPUS_MODEL }}

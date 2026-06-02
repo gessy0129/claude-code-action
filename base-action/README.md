@@ -130,6 +130,8 @@ Note: the base action does not fetch or refresh the identity token itself — yo
 | `claude_code_oauth_token` | Claude Code OAuth token (alternative to anthropic_api_key)                                                              | No       | ''                           |
 | `use_bedrock`             | Use Amazon Bedrock with OIDC authentication instead of direct Anthropic API                                             | No       | 'false'                      |
 | `use_vertex`              | Use Google Vertex AI with OIDC authentication instead of direct Anthropic API                                           | No       | 'false'                      |
+| `use_foundry`             | Use Microsoft Foundry with OIDC authentication instead of direct Anthropic API                                          | No       | 'false'                      |
+| `use_aws_platform`        | Use Claude Platform on AWS (Anthropic-operated API with AWS authentication) instead of direct Anthropic API             | No       | 'false'                      |
 | `use_node_cache`          | Whether to use Node.js dependency caching (set to true only for Node.js projects with lock files)                       | No       | 'false'                      |
 | `show_full_output`        | Show full JSON output (⚠️ May expose secrets - see [security docs](../docs/security.md#️-full-output-security-warning)) | No       | 'false'\*\*                  |
 
