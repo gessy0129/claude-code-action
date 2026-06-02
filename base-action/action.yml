@@ -46,6 +46,10 @@ inputs:
     description: "Use Microsoft Foundry with OIDC authentication instead of direct Anthropic API"
     required: false
     default: "false"
+  use_aws_platform:
+    description: "Use Claude Platform on AWS (Anthropic-operated API with AWS authentication) instead of direct Anthropic API"
+    required: false
+    default: "false"
 
   use_node_cache:
     description: "Whether to use Node.js dependency caching (set to true only for Node.js projects with lock files)"
@@ -124,7 +128,7 @@ runs:
         PATH_TO_CLAUDE_CODE_EXECUTABLE: ${{ inputs.path_to_claude_code_executable }}
       run: |
         if [ -z "$PATH_TO_CLAUDE_CODE_EXECUTABLE" ]; then
-          CLAUDE_CODE_VERSION="2.1.159"
+          CLAUDE_CODE_VERSION="2.1.160"
           echo "Installing Claude Code v${CLAUDE_CODE_VERSION}..."
           for attempt in 1 2 3; do
             echo "Installation attempt $attempt..."
@@ -181,6 +185,7 @@ runs:
         CLAUDE_CODE_USE_BEDROCK: ${{ inputs.use_bedrock == 'true' && '1' || '' }}
         CLAUDE_CODE_USE_VERTEX: ${{ inputs.use_vertex == 'true' && '1' || '' }}
         CLAUDE_CODE_USE_FOUNDRY: ${{ inputs.use_foundry == 'true' && '1' || '' }}
+        CLAUDE_CODE_USE_ANTHROPIC_AWS: ${{ inputs.use_aws_platform == 'true' && '1' || '' }}
 
         # AWS configuration
         AWS_REGION: ${{ env.AWS_REGION }}
@@ -199,6 +204,13 @@ runs:
         # Microsoft Foundry configuration
         ANTHROPIC_FOUNDRY_RESOURCE: ${{ env.ANTHROPIC_FOUNDRY_RESOURCE }}
         ANTHROPIC_FOUNDRY_BASE_URL: ${{ env.ANTHROPIC_FOUNDRY_BASE_URL }}
+
+        # Claude Platform on AWS configuration
+        ANTHROPIC_AWS_WORKSPACE_ID: ${{ env.ANTHROPIC_AWS_WORKSPACE_ID }}
+        ANTHROPIC_AWS_BASE_URL: ${{ env.ANTHROPIC_AWS_BASE_URL || (env.AWS_REGION && format('https://aws-external-anthropic.{0}.api.aws', env.AWS_REGION)) }}
+        ANTHROPIC_AWS_API_KEY: ${{ env.ANTHROPIC_AWS_API_KEY }}
+        CLAUDE_CODE_SKIP_ANTHROPIC_AWS_AUTH: ${{ env.CLAUDE_CODE_SKIP_ANTHROPIC_AWS_AUTH }}
+
         ANTHROPIC_DEFAULT_SONNET_MODEL: ${{ env.ANTHROPIC_DEFAULT_SONNET_MODEL }}
         ANTHROPIC_DEFAULT_HAIKU_MODEL: ${{ env.ANTHROPIC_DEFAULT_HAIKU_MODEL }}
         ANTHROPIC_DEFAULT_OPUS_MODEL: ${{ env.ANTHROPIC_DEFAULT_OPUS_MODEL }}

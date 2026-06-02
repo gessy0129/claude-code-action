@@ -235,6 +235,15 @@ export function parseSdkOptions(options: ClaudeOptions): ParsedSdkOptions {
   delete env.ACTIONS_ID_TOKEN_REQUEST_URL;
   delete env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
 
+  // The action forwards ANTHROPIC_AWS_API_KEY as an empty string when unset (composite
+  // action env blocks cannot omit a key conditionally). The Claude Platform on AWS SDK
+  // client treats a present-but-empty key as bearer auth (apiKey === "" is not null),
+  // which suppresses SigV4 and yields "401 Invalid bearer token". Drop it when empty so
+  // the AWS credential chain (SigV4) is used instead.
+  if (env.ANTHROPIC_AWS_API_KEY === "") {
+    delete env.ANTHROPIC_AWS_API_KEY;
+  }
+
   // Build system prompt option - default to claude_code preset
   let systemPrompt: SdkOptions["systemPrompt"];
   if (options.systemPrompt) {
